@@ -3,25 +3,29 @@ from pprint import pprint
 import requests
 import freeze
 
-OAUTH_URL = 'https://oauth.vk.com/authorize'
+OAUTH_VK_URL = 'https://oauth.vk.com/authorize'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
 TOKEN_VK = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008' #получен в Нетологии
-#TOKEN_YD = '123'
-TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
+######!!!!!!!!!!!!!!!!!!!!!!!
+TOKEN_YD = 'AgAAAAAy_UpkAADLW4DINWqLNUrUml_SsYrvX7U'
+#TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
 print('Сохранен токен Яндекс: ', TOKEN_YD)
-#TOKEN_YD = '12345'
-###id_korovin = 552934290
+
+id_VK = 552934290 #id_korovin
+#id_VK = input('Пожалуйста, введите id пользователя Вконтакте, копию фото которого надо сделать (при пустом вводе будет использован id552934290): ')
+
 
 class VKUser:
-    def __init__(self, id=552934290) -> None:
+    def __init__(self, id=552934290): #-> None: ??????
         self.token_VK = TOKEN_VK
         self.id = id
-        self.id2 = id2
+        #self.id2 = id2 #удалить позже???
+        print(self.token_VK, type(self.token_VK))
 
     def get_params(self, add_params: dict = None):
         params = {
             'access_token': TOKEN,
-            'v': '5.107'
+            'v': '5.77'
         }
         if add_params:
             # что-то делаем
@@ -33,15 +37,40 @@ class VKUser:
         response = requests.get(url, params)
         return response.json()
 
+    @property
+    def get_photos(self):
+        response = requests.get(
+            'https://api.vk.com/method/photos.get',
+            params={
+                'access_token': TOKEN_VK,
+                'v': 5.77,
+                'owner_id': id_VK,
+                'album_id': 'profile',
+                'extended':	1
+            }
+        )
+        # pprint(response.json())
+        # print(json.loads(response.text))
+        print(json.loads(response.text)['response']['items'][0]['sizes'])
+        for max_size in json.loads(response.text)['response']['items'][0]['sizes']:
+            print('===git ', max_size)
+            max_height = max(max_size['height'])
+            max_width = max(max_size['width'])
+            max_url = max_size['url']
+            print('***', max_height, max_width, max_url)
+
+
+        return response.json()
+
+#pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
+
+user0 = VKUser()
+#user0.__init__(id_VK)
+user0.get_photos()
+
+
 # Нужно написать программу, которая будет:
-#     1. Получать фотографии с профиля. Для этого нужно использовать метод photos.get.
+#     1. Получать фотографии с профиля. Для этого нужно использовать метод photos.get. add: owner_id; album_id: profile; extended:	1;
 #     2. Сохранять фотографии максимального размера(ширина/высота в пикселях) на Я.Диске.
 #     3. Для имени фотографий использовать количество лайков.
 #     4. Сохранять информацию по фотографиям в json-файл с результатами.
-
-
-
-id_VK = input('Пожалуйста, введите id пользователя Вконтакте, копию фото которого надо сделать (при пустом вводе будет использован id552934290): ')
-
-
-#pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
