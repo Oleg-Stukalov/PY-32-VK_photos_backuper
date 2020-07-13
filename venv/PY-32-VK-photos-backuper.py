@@ -2,6 +2,7 @@ import json
 from pprint import pprint
 import requests
 import freeze
+import os
 
 OAUTH_VK_URL = 'https://oauth.vk.com/authorize'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
@@ -20,7 +21,6 @@ class VKUser:
         self.token_VK = TOKEN_VK
         self.id = id
         #self.id2 = id2 #удалить позже???
-        print(self.token_VK, type(self.token_VK))
 
     def get_params(self, add_params: dict = None):
         params = {
@@ -37,7 +37,6 @@ class VKUser:
         response = requests.get(url, params)
         return response.json()
 
-    @property
     def get_photos(self):
         response = requests.get(
             'https://api.vk.com/method/photos.get',
@@ -49,16 +48,30 @@ class VKUser:
                 'extended':	1
             }
         )
-        # pprint(response.json())
+        #pprint(response.json())
         # print(json.loads(response.text))
-        print(json.loads(response.text)['response']['items'][0]['sizes'])
+        ###print(json.loads(response.text)['response']['items'][0]['sizes'])
+        max_height = []
+        max_width = []
+        max_url = []
+        photo_url_set = set()
         for max_size in json.loads(response.text)['response']['items'][0]['sizes']:
-            print('===git ', max_size)
-            max_height = max(max_size['height'])
-            max_width = max(max_size['width'])
-            max_url = max_size['url']
-            print('***', max_height, max_width, max_url)
-
+            #print('===', max_size)
+            max_height.append(max_size['height'])
+            max_width.append(max_size['width'])
+            max_url.append(max_size['url'])
+            #print('***', max_height, max_width, max_url)
+            photo_url_set.add(max_url[max_height.index(max(max_height))])
+        print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
+        ###цикл на сохраннение фото локально
+        ###разобраться с ИМЕНЕМ файла по лайкам!!!
+        for number, photo in enumerate(photo_url_set):
+            response_img = requests.get(photo)
+            #print('***', response_img, response_img.text)
+            with open(number, 'wb') as f:
+                #print('===', number, photo)
+                f.write(response_img.content)
+            print(f'Успешно скачан файл {number} по ссылке: {photo}')
 
         return response.json()
 
