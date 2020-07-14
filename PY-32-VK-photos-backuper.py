@@ -17,14 +17,13 @@ id_VK = 552934290 #id_korovin
 
 
 class VKUser:
-    def __init__(self, id=552934290): #-> None: ??????
-        self.token_VK = TOKEN_VK
-        self.id = id
-        #self.id2 = id2 #удалить позже???
+    def __init__(self, token: str, user_id: int):
+        self.token_VK = token
+        self.user_id = user_id
 
     def get_params(self, add_params: dict = None):
         params = {
-            'access_token': TOKEN,
+            'access_token': self.token_VK,
             'v': '5.77'
         }
         if add_params:
@@ -61,14 +60,16 @@ class VKUser:
             max_width.append(max_size['width'])
             max_url.append(max_size['url'])
             #print('***', max_height, max_width, max_url)
-            photo_url_set.add(max_url[max_height.index(max(max_height))])
+            photo_url_set.add(max_url[max_width.index(max(max_width))])
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
-        ###цикл на сохраннение фото локально
+
         ###разобраться с ИМЕНЕМ файла по лайкам!!!
+        #???
+        #################
         for number, photo in enumerate(photo_url_set):
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
-            with open(number, 'wb') as f:
+            with open(f'{number}.jpg', 'wb') as f:
                 #print('===', number, photo)
                 f.write(response_img.content)
             print(f'Успешно скачан файл {number} по ссылке: {photo}')
@@ -77,7 +78,7 @@ class VKUser:
 
 #pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
 
-user0 = VKUser()
+user0 = VKUser(TOKEN_VK, id_VK)
 #user0.__init__(id_VK)
 user0.get_photos()
 
