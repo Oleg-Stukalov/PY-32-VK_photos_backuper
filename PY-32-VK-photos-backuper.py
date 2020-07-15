@@ -27,26 +27,39 @@ class VKUser:
             'v': '5.77'
         }
         if add_params:
-            # что-то делаем
-            # params = расширяем новыми параметрами
-            pass
+            if add_params:
+                for elem in add_params:
+                    params.update[elem] = add_params[elem]
+        print('*****', params)
         return params
+
 
     def get_request(self, url, params):
         response = requests.get(url, params)
         return response.json()
 
     def get_photos(self):
-        response = requests.get(
-            'https://api.vk.com/method/photos.get',
-            params={
-                'access_token': TOKEN_VK,
-                'v': 5.77,
+        #доп параметры для скачивания фото
+        photo_down_params = self.get_params(
+            add_params = {
                 'owner_id': id_VK,
                 'album_id': 'profile',
-                'extended':	1
+                'extended': 1
             }
         )
+        response = self.get_request('https://api.vk.com/method/photos.get', photo_down_params)
+        # ###########backup copy
+        # def get_photos(self):
+        #     response = requests.get(
+        #         'https://api.vk.com/method/photos.get',
+        #         params={
+        #             'access_token': TOKEN_VK,
+        #             'v': 5.77,
+        #             'owner_id': id_VK,
+        #             'album_id': 'profile',
+        #             'extended': 1
+        #         }
+        #     )
         #pprint(response.json())
         # print(json.loads(response.text))
         ###print(json.loads(response.text)['response']['items'][0]['sizes'])
@@ -54,25 +67,34 @@ class VKUser:
         max_width = []
         max_url = []
         photo_url_set = set()
+        #сохранение ссылок на фото
         for max_size in json.loads(response.text)['response']['items'][0]['sizes']:
             #print('===', max_size)
             max_height.append(max_size['height'])
             max_width.append(max_size['width'])
             max_url.append(max_size['url'])
+
             #print('***', max_height, max_width, max_url)
             photo_url_set.add(max_url[max_width.index(max(max_width))])
+        likes_list = []
+        dates_list = []
+        # имя файла по лайкам
+        for likes in json.loads(response.text)['response']['items']:
+            likes_list.append(likes['likes']['count'])
+            dates_list.append(likes['date'])
+        for index in range(1, len(likes_list)):
+            if likes_list[index] == likes_list[index - 1]:
+                likes_list[index] = f'{likes_list[index]}-{dates_list[index]}'
+        #print(likes_list, dates_list)
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
 
-        ###разобраться с ИМЕНЕМ файла по лайкам!!!
-        #???
-        #################
         for number, photo in enumerate(photo_url_set):
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
-            with open(f'{number}.jpg', 'wb') as f:
+            with open(f'{likes_list[number]}.jpg', 'wb') as f:
                 #print('===', number, photo)
                 f.write(response_img.content)
-            print(f'Успешно скачан файл {number} по ссылке: {photo}')
+            print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
 
         return response.json()
 
