@@ -7,11 +7,13 @@ from os.path import getsize, join
 import pathlib
 
 OAUTH_VK_URL = 'https://oauth.vk.com/authorize'
+YD_URL = 'https://cloud-api.yandex.net:443/v1/disk'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
 TOKEN_VK = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008' #получен в Нетологии
 ######!!!!!!!!!!!!!!!!!!!!!!!
-TOKEN_YD = 'dsfds'
+TOKEN_YD = '511'
 #TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
+YD_OAUTH = {'Authorization': f'OAuth {TOKEN_YD}'}
 print('Сохранен токен Яндекс: ', TOKEN_YD)
 
 id_VK = 552934290 #id_korovin
@@ -37,6 +39,10 @@ class VKUser:
         response = requests.get(url, params)
         return response.json()
 
+    def put_request(self, url, params):
+        response = requests.put(url, params)
+        return response.json()
+
     def get_photos(self):
         #доп параметры для скачивания фото
         photo_down_params = self.get_params(
@@ -46,62 +52,71 @@ class VKUser:
                 'extended': 1
             }
         )
-        #print('===', photo_down_params)
         response = self.get_request('https://api.vk.com/method/photos.get', photo_down_params)
-        print(type(response), response)
         max_height = []
         max_width = []
         max_url = []
         photo_url_set = set()
         #сохранение ссылок на фото
-        for max_size in json.loads(response.text)['response']['items'][0]['sizes']:
-            #print('===', max_size)
+        for max_size in response['response']['items'][0]['sizes']:
             max_height.append(max_size['height'])
             max_width.append(max_size['width'])
             max_url.append(max_size['url'])
-
-            #print('***', max_height, max_width, max_url)
             photo_url_set.add(max_url[max_width.index(max(max_width))])
         likes_list = []
         dates_list = []
         # имя файла по лайкам
-        for likes in json.loads(response.text)['response']['items']:
+        for likes in response['response']['items']:
             likes_list.append(likes['likes']['count'])
             dates_list.append(likes['date'])
         for index in range(1, len(likes_list)):
             if likes_list[index] == likes_list[index - 1]:
                 likes_list[index] = f'{likes_list[index]}-{dates_list[index]}'
-        #print(likes_list, dates_list)
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
 
-
-
+        json_output = []
         for number, photo in enumerate(photo_url_set):
-            json_output = {}
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
             with open(f'{likes_list[number]}.jpg', 'wb') as f:
-                #print('===', number, photo)
                 f.write(response_img.content)
-                ###########
                 # создание JSON-отчета
-                temp_dic = {'file_name': likes_list[number], 'size': getsize(join(os.walk('.'), likes_list[number]))}
-                print(temp_dic)
-                json_output.update(temp_dic)
+                temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
+                json_output.append(temp_dic)
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
-            pathlib.Path('.').write_text(json_output, encoding="utf-8")
+            # сохраняю в json
+            with open('output.json', 'w', encoding='utf-8') as f:
+                f.write(json.dumps(json_output, ensure_ascii=False))
+        print('Успешно сохранен лог файл: output.json')
+        return response
 
-        return response.json()
+    def yandex_folder(self):
+        yandex_folder_url = f'{YD_URL}{"/resources"}'
+        print(yandex_folder_url)
+        #доп параметры для создания папки ЯД
+        yandex_folder_params = {
+                'Authorization': f'OAuth {TOKEN_YD}',
+                'path': f'{"id_VK-"}{id_VK}'
+            }
+        print(yandex_folder_params)
+        response = self.put_request(yandex_folder_url, yandex_folder_params)
+        print(type(response), response)
+
+        return None
+
+    # def yandex_upload(self):
+    #     #открыть файл на БИНАР чтение, передать его в яндекс!
+    #     with open(real_path, 'rb') as f:
+    #         data_4upload = f.read()
+    #         print('Полная строка для загрузки файла', common_path_upload + upload_postfix + '&url=' + url_upload,
+    #               'data=', data_4upload, 'headers=', headers_token)
+    #     respond_upload2 = requests.put(url_upload, data=data_4upload)
+    #     # print('Ответ сервера2 (загрузка файла): ', respond_upload2)
+    #     print(respond_upload2.text)
+    #     return print(f'Файл: "{loc_file}" - успешно загружен!')
 
 #pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
 
 user0 = VKUser(TOKEN_VK, id_VK)
-#user0.__init__(id_VK)
 user0.get_photos()
-
-
-# Нужно написать программу, которая будет:
-#     1. Получать фотографии с профиля. Для этого нужно использовать метод photos.get. add: owner_id; album_id: profile; extended:	1;
-#     2. Сохранять фотографии максимального размера(ширина/высота в пикселях) на Я.Диске.
-#     3. Для имени фотографий использовать количество лайков.
-#     4. Сохранять информацию по фотографиям в json-файл с результатами.
+user0.yandex_folder()
