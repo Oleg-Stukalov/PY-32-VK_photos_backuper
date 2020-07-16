@@ -3,6 +3,8 @@ from pprint import pprint
 import requests
 import freeze
 import os
+from os.path import getsize, join
+import pathlib
 
 OAUTH_VK_URL = 'https://oauth.vk.com/authorize'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
@@ -27,12 +29,9 @@ class VKUser:
             'v': '5.77'
         }
         if add_params:
-            if add_params:
-                for elem in add_params:
-                    params.update[elem] = add_params[elem]
-        print('*****', params)
+            params.update(add_params)
+        #print('*****', params)
         return params
-
 
     def get_request(self, url, params):
         response = requests.get(url, params)
@@ -47,22 +46,9 @@ class VKUser:
                 'extended': 1
             }
         )
+        #print('===', photo_down_params)
         response = self.get_request('https://api.vk.com/method/photos.get', photo_down_params)
-        # ###########backup copy
-        # def get_photos(self):
-        #     response = requests.get(
-        #         'https://api.vk.com/method/photos.get',
-        #         params={
-        #             'access_token': TOKEN_VK,
-        #             'v': 5.77,
-        #             'owner_id': id_VK,
-        #             'album_id': 'profile',
-        #             'extended': 1
-        #         }
-        #     )
-        #pprint(response.json())
-        # print(json.loads(response.text))
-        ###print(json.loads(response.text)['response']['items'][0]['sizes'])
+        print(type(response), response)
         max_height = []
         max_width = []
         max_url = []
@@ -88,13 +74,22 @@ class VKUser:
         #print(likes_list, dates_list)
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
 
+
+
         for number, photo in enumerate(photo_url_set):
+            json_output = {}
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
             with open(f'{likes_list[number]}.jpg', 'wb') as f:
                 #print('===', number, photo)
                 f.write(response_img.content)
+                ###########
+                # создание JSON-отчета
+                temp_dic = {'file_name': likes_list[number], 'size': getsize(join(os.walk('.'), likes_list[number]))}
+                print(temp_dic)
+                json_output.update(temp_dic)
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
+            pathlib.Path('.').write_text(json_output, encoding="utf-8")
 
         return response.json()
 
