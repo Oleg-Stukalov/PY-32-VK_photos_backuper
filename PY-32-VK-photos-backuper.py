@@ -8,10 +8,11 @@ import pathlib
 
 OAUTH_VK_URL = 'https://oauth.vk.com/authorize'
 YD_URL = 'https://cloud-api.yandex.net:443/v1/disk'
+YANDEX_UPLOAD_URL = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
 TOKEN_VK = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008' #получен в Нетологии
 ######!!!!!!!!!!!!!!!!!!!!!!!
-TOKEN_YD = '511'
+TOKEN_YD = '211'
 #TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
 YD_OAUTH = {'Authorization': f'OAuth {TOKEN_YD}'}
 print('Сохранен токен Яндекс: ', TOKEN_YD)
@@ -39,8 +40,8 @@ class VKUser:
         response = requests.get(url, params)
         return response.json()
 
-    def put_request(self, url, params):
-        response = requests.put(url, params)
+    def put_request(self, url, params, headers):
+        response = requests.put(url, params, headers)
         return response.json()
 
     def get_photos(self):
@@ -83,37 +84,45 @@ class VKUser:
                 # создание JSON-отчета
                 temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
                 json_output.append(temp_dic)
+                file_for_upload = likes_list[number]
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
             # сохраняю в json
             with open('output.json', 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_output, ensure_ascii=False))
         print('Успешно сохранен лог файл: output.json')
-        return response
+        return file_for_upload, response
 
     def yandex_folder(self):
+        yandex_oauth_header = {
+            'Accept': 'application/json',
+            'Authorization': f'OAuth {TOKEN_YD}'
+        }
         yandex_folder_url = f'{YD_URL}{"/resources"}'
+        #?headers={yandex_oauth_header}
         print(yandex_folder_url)
         #доп параметры для создания папки ЯД
         yandex_folder_params = {
-                'Authorization': f'OAuth {TOKEN_YD}',
-                'path': f'{"id_VK-"}{id_VK}'
+                'path': f'{"id_VK-"}{id_VK}',
+                'overwrite': 'true'
             }
         print(yandex_folder_params)
-        response = self.put_request(yandex_folder_url, yandex_folder_params)
+        response = self.put_request(yandex_folder_url, params=yandex_folder_params, headers=yandex_oauth_header)
         print(type(response), response)
+        self.yandex_upload(self.file_for_upload)
+        return response
 
-        return None
-
-    # def yandex_upload(self):
-    #     #открыть файл на БИНАР чтение, передать его в яндекс!
-    #     with open(real_path, 'rb') as f:
-    #         data_4upload = f.read()
-    #         print('Полная строка для загрузки файла', common_path_upload + upload_postfix + '&url=' + url_upload,
-    #               'data=', data_4upload, 'headers=', headers_token)
-    #     respond_upload2 = requests.put(url_upload, data=data_4upload)
-    #     # print('Ответ сервера2 (загрузка файла): ', respond_upload2)
-    #     print(respond_upload2.text)
-    #     return print(f'Файл: "{loc_file}" - успешно загружен!')
+    def yandex_upload(self, file_for_upload):
+        response = requests.get(YANDEX_UPLOAD_URL, params=self.params, headers=self.headers)
+        put_url = response.json().get('href')
+        #открыть файл на БИНАР чтение, передать его в яндекс!
+        with open(file_for_upload, 'rb') as f:
+            data_4upload = f.read()
+            # print('Полная строка для загрузки файла', common_path_upload + upload_postfix + '&url=' + url_upload,
+            #       'data=', data_4upload, 'headers=', headers_token)
+        response_upload = requests.put(put_url, data=data_4upload)
+        # print('Ответ сервера (загрузка файла): ', response_upload)
+        print(response_upload.text)
+        return print(f'Файл: "{file_for_upload}" - успешно загружен!')
 
 #pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
 
