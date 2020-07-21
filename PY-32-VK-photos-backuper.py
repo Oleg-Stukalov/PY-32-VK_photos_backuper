@@ -1,5 +1,6 @@
 import json
 from pprint import pprint
+import pip
 import requests
 import freeze
 import os
@@ -12,7 +13,7 @@ YANDEX_UPLOAD_URL = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
 TOKEN_VK = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008' #получен в Нетологии
 ######!!!!!!!!!!!!!!!!!!!!!!!
-TOKEN_YD = '211'
+TOKEN_YD = '423'
 #TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
 YD_OAUTH = {'Authorization': f'OAuth {TOKEN_YD}'}
 print('Сохранен токен Яндекс: ', TOKEN_YD)
@@ -22,9 +23,13 @@ id_VK = 552934290 #id_korovin
 
 
 class VKUser:
-    def __init__(self, token: str, user_id: int):
+    def __init__(self, token: str, user_id: int, params=None, headers=None, files_for_upload=None):
         self.token_VK = token
         self.user_id = user_id
+        self.params = params
+        self.headers = headers
+        self.files_for_upload = files_for_upload
+
 
     def get_params(self, add_params: dict = None):
         params = {
@@ -36,12 +41,12 @@ class VKUser:
         #print('*****', params)
         return params
 
-    def get_request(self, url, params):
-        response = requests.get(url, params)
+    def get_request(self, url, params, headers=None):
+        response = requests.get(url, params=params)
         return response.json()
 
     def put_request(self, url, params, headers):
-        response = requests.put(url, params, headers)
+        response = requests.put(url, params=params, headers=headers)
         return response.json()
 
     def get_photos(self):
@@ -76,6 +81,7 @@ class VKUser:
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
 
         json_output = []
+        files_for_upload = []
         for number, photo in enumerate(photo_url_set):
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
@@ -84,13 +90,18 @@ class VKUser:
                 # создание JSON-отчета
                 temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
                 json_output.append(temp_dic)
-                file_for_upload = likes_list[number]
+                files_for_upload.append(f'{likes_list[number]}.jpg')
+                #self.files_for_upload.append(f'{likes_list[number]}.jpg')
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
             # сохраняю в json
             with open('output.json', 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_output, ensure_ascii=False))
         print('Успешно сохранен лог файл: output.json')
-        return file_for_upload, response
+        print('===111', files_for_upload)
+        return files_for_upload
+        print('===222', self.files_for_upload, files_for_upload)
+        print('===333', get_photos())
+
 
     def yandex_folder(self):
         yandex_oauth_header = {
@@ -98,31 +109,40 @@ class VKUser:
             'Authorization': f'OAuth {TOKEN_YD}'
         }
         yandex_folder_url = f'{YD_URL}{"/resources"}'
-        #?headers={yandex_oauth_header}
-        print(yandex_folder_url)
         #доп параметры для создания папки ЯД
         yandex_folder_params = {
                 'path': f'{"id_VK-"}{id_VK}',
                 'overwrite': 'true'
             }
-        print(yandex_folder_params)
+        #print(yandex_folder_params)
         response = self.put_request(yandex_folder_url, params=yandex_folder_params, headers=yandex_oauth_header)
-        print(type(response), response)
-        self.yandex_upload(self.file_for_upload)
+        print('+++', type(response), response)
+        self.yandex_upload(self.files_for_upload)
         return response
 
-    def yandex_upload(self, file_for_upload):
-        response = requests.get(YANDEX_UPLOAD_URL, params=self.params, headers=self.headers)
-        put_url = response.json().get('href')
-        #открыть файл на БИНАР чтение, передать его в яндекс!
-        with open(file_for_upload, 'rb') as f:
-            data_4upload = f.read()
-            # print('Полная строка для загрузки файла', common_path_upload + upload_postfix + '&url=' + url_upload,
-            #       'data=', data_4upload, 'headers=', headers_token)
-        response_upload = requests.put(put_url, data=data_4upload)
-        # print('Ответ сервера (загрузка файла): ', response_upload)
-        print(response_upload.text)
-        return print(f'Файл: "{file_for_upload}" - успешно загружен!')
+    def yandex_upload(self, files_for_upload):
+        #print('!!!!!!', files_for_upload)
+        yandex_oauth_header = {
+            'Accept': 'application/json',
+            'Authorization': f'OAuth {TOKEN_YD}'
+        }
+        for file in files_for_upload:
+            # доп параметры для получения ссылки на загрузку файла
+            yandex_upload_params = {
+                'path': file
+            }
+            response = requests.get(YANDEX_UPLOAD_URL, params=yandex_upload_params, headers=yandex_oauth_header)
+            #print('!!!!!!!!!', response, response.text)
+            put_url = response.json().get('href')
+            #открыть файл на БИНАР чтение, передать его в яндекс!
+            with open(file, 'rb') as f:
+                data_4upload = f.read()
+            print('*****', put_url)
+            response_upload = requests.put(put_url, data=data_4upload)
+            print('Ответ сервера (загрузка файла): ', response_upload)
+            print(response_upload.text)
+            print(f'Файл: "{file}" - успешно загружен!')
+        return print(f'Все файлы успешно загружены в Яндекс.диск!')
 
 #pip freeze > requirements.txt #открыть на запись, сохранить вывод freeze???
 
