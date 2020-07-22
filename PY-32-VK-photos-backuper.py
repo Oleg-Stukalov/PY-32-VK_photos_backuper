@@ -23,12 +23,11 @@ id_VK = 552934290 #id_korovin
 
 
 class VKUser:
-    def __init__(self, token: str, user_id: int, params=None, headers=None, files_for_upload=None):
+    def __init__(self, token: str, user_id: int, params=None, headers=None):
         self.token_VK = token
         self.user_id = user_id
         self.params = params
         self.headers = headers
-        self.files_for_upload = files_for_upload
 
 
     def get_params(self, add_params: dict = None):
@@ -81,8 +80,9 @@ class VKUser:
         print(f'Будем сохранять {len(photo_url_set)} следующих фото: {photo_url_set}')
 
         json_output = []
-        self.files_for_upload = []
+        files_for_upload = []
         for number, photo in enumerate(photo_url_set):
+            print("number:", number)
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
             with open(f'{likes_list[number]}.jpg', 'wb') as f:
@@ -90,17 +90,15 @@ class VKUser:
                 # создание JSON-отчета
                 temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
                 json_output.append(temp_dic)
-                self.files_for_upload.append(f'{likes_list[number]}.jpg')
-                #self.files_for_upload.append(f'{likes_list[number]}.jpg')
+                files_for_upload.append(f'{likes_list[number]}.jpg')
+                #files_for_upload.append(f'{likes_list[number]}.jpg')
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
             # сохраняю в json
             with open('output.json', 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_output, ensure_ascii=False))
         print('Успешно сохранен лог файл: output.json')
-        print('===111', type(self.files_for_upload), self.files_for_upload)
-        return self.files_for_upload
-        #print('===222', self.files_for_upload, files_for_upload)
-        # print('===333', get_photos())
+        print('===111', type(files_for_upload), files_for_upload)
+        return files_for_upload
 
 
     def yandex_folder(self):
@@ -117,7 +115,6 @@ class VKUser:
         #print(yandex_folder_params)
         response = self.put_request(yandex_folder_url, params=yandex_folder_params, headers=yandex_oauth_header)
         #print('+++', type(response), response)
-        self.yandex_upload(self.files_for_upload)
         return response
 
     def yandex_upload(self, files_for_upload):
@@ -151,3 +148,4 @@ class VKUser:
 user0 = VKUser(TOKEN_VK, id_VK)
 files = user0.get_photos()
 user0.yandex_folder()
+user0.yandex_upload(files)
