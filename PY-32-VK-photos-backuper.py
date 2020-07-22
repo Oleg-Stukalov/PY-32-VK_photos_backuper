@@ -82,7 +82,7 @@ class VKUser:
         json_output = []
         files_for_upload = []
         for number, photo in enumerate(photo_url_set):
-            print("number:", number)
+            print('number:', number)
             response_img = requests.get(photo)
             #print('***', response_img, response_img.text)
             with open(f'{likes_list[number]}.jpg', 'wb') as f:
