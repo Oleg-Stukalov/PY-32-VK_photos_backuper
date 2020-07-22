@@ -89,10 +89,9 @@ class VKUser:
                 f.write(response_img.content)
                 # создание JSON-отчета
                 temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
-                print('size:',getsize(f'{likes_list[number]}.jpg'))
+                print('size:', getsize(f'{likes_list[number]}.jpg'))
                 json_output.append(temp_dic)
                 files_for_upload.append(f'{likes_list[number]}.jpg')
-                #files_for_upload.append(f'{likes_list[number]}.jpg')
             print(f'Успешно скачан файл {likes_list[number]} по ссылке: {photo}')
             # сохраняю в json
             with open('output.json', 'w', encoding='utf-8') as f:
