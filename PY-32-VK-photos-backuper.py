@@ -131,6 +131,7 @@ class VKUser:
             yandex_upload_params = {
                 'path': file
             }
+            print(file)
             response = requests.get(YANDEX_UPLOAD_URL, params=yandex_upload_params, headers=yandex_oauth_header)
             #print('!!!!!!!!!', response, response.text)
             print('+++', type(response), response)
