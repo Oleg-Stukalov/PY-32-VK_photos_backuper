@@ -137,9 +137,9 @@ class VKUser:
             #открыть файл на БИНАР чтение, передать его в яндекс!
             with open(file, 'rb') as f:
                 data_4upload = f.read()
-            response_upload = requests.put(put_url, data=data_4upload)
-            print('Ответ сервера (загрузка файла): ', response_upload)
-            print(response_upload.text)
+                response_upload = requests.put(put_url, data=data_4upload)
+                print('Ответ сервера (загрузка файла): ', response_upload)
+                print(response_upload.text)
             print(f'Файл: "{file}" - успешно загружен!')
         return print(f'Все файлы успешно загружены в Яндекс.диск!')
 
