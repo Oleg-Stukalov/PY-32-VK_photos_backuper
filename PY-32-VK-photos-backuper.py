@@ -89,7 +89,7 @@ class VKUser:
                 f.write(response_img.content)
                 # создание JSON-отчета
                 temp_dic = {'file_name': likes_list[number], 'size': getsize(f'{likes_list[number]}.jpg')}
-                print('size:',getsize(f'{likes_list[number]}.jpg')
+                print('size:',getsize(f'{likes_list[number]}.jpg'))
                 json_output.append(temp_dic)
                 files_for_upload.append(f'{likes_list[number]}.jpg')
                 #files_for_upload.append(f'{likes_list[number]}.jpg')
