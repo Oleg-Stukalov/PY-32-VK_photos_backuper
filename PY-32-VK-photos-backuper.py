@@ -126,7 +126,7 @@ class VKUser:
         for file in files_for_upload:
             # доп параметры для получения ссылки на загрузку файла
             yandex_upload_params = {
-                'path': file
+                'path': f'{"id_VK-"}{id_VK}{"/"}{file}'
             }
             print(file)
             response = requests.get(YANDEX_UPLOAD_URL, params=yandex_upload_params, headers=yandex_oauth_header)
