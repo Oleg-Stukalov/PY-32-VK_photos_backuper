@@ -13,7 +13,7 @@ YANDEX_UPLOAD_URL = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
 #APP_ID = 7533990  #получен СОИ по ссылке https://vk.com/editapp?act=create
 TOKEN_VK = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008' #получен в Нетологии
 ######!!!!!!!!!!!!!!!!!!!!!!!
-TOKEN_YD = '423'
+TOKEN_YD = '234'
 #TOKEN_YD = input('Пожалуйста, введите токен учетной записи Яндекс, куда будем сохранять копию фото: ')
 YD_OAUTH = {'Authorization': f'OAuth {TOKEN_YD}'}
 print('Сохранен токен Яндекс: ', TOKEN_YD)
@@ -97,10 +97,10 @@ class VKUser:
             with open('output.json', 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_output, ensure_ascii=False))
         print('Успешно сохранен лог файл: output.json')
-        print('===111', files_for_upload)
-        return files_for_upload
+        print('===111', type(files_for_upload), files_for_upload)
+        #return files_for_upload
         print('===222', self.files_for_upload, files_for_upload)
-        print('===333', get_photos())
+        # print('===333', get_photos())
 
 
     def yandex_folder(self):
@@ -121,12 +121,12 @@ class VKUser:
         return response
 
     def yandex_upload(self, files_for_upload):
-        #print('!!!!!!', files_for_upload)
         yandex_oauth_header = {
             'Accept': 'application/json',
             'Authorization': f'OAuth {TOKEN_YD}'
         }
-        for file in files_for_upload:
+        print('****', type(self.files_for_upload), self.files_for_upload)
+        for file in range(len(files_for_upload)):
             # доп параметры для получения ссылки на загрузку файла
             yandex_upload_params = {
                 'path': file
